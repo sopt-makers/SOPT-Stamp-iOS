@@ -163,18 +163,30 @@ extension ListDetailVC {
         output.$listDetailModel
             .compactMap { $0 }
             .sink { model in
-                self.setData(model)
-                if self.sceneType == .none {
-                    self.presentCompletedVC(level: self.starLevel)
+                if model.image.isEmpty {
+                    let networkAlert = self.factory.makeNetworkAlertVC()
+                    self.present(networkAlert, animated: true) {
+                        self.backgroundDimmerView.removeFromSuperview()
+                    }
+                } else {
+                    self.setData(model)
+                    if self.sceneType == .none {
+                        self.presentCompletedVC(level: self.starLevel)
+                    }
+                    self.sceneType = .completed
+                    self.reloadData(self.sceneType)
                 }
-                self.sceneType = .completed
-                self.reloadData(self.sceneType)
             }.store(in: self.cancelBag)
         
         output.editSuccessed
             .sink { successed in
-                self.reloadData(.completed)
-                self.showToast(message: I18N.ListDetail.editCompletedToast)
+                if successed {
+                    self.reloadData(.completed)
+                    self.showToast(message: I18N.ListDetail.editCompletedToast)
+                } else {
+                    let networkAlert = self.factory.makeNetworkAlertVC()
+                    self.present(networkAlert, animated: true)
+                }
             }.store(in: self.cancelBag)
         
         output.showDeleteAlert
@@ -191,7 +203,8 @@ extension ListDetailVC {
                 if success {
                     self.navigationController?.popViewController(animated: true)
                 } else {
-                    self.makeAlert(title: I18N.Default.error, message: I18N.Default.networkError)
+                    let networkAlert = self.factory.makeNetworkAlertVC()
+                    self.present(networkAlert, animated: true)
                 }
             }.store(in: self.cancelBag)
     }

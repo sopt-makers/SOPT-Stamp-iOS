@@ -53,6 +53,7 @@ extension DefaultListDetailUseCase: ListDetailUseCase {
     public func postStamp(missionId: Int, stampData: ListDetailRequestModel) {
         let data = [stampData.imgURL as Any, stampData.content] as [Any]
         repository.postStamp(missionId: missionId, stampData: data)
+            .replaceError(with: ListDetailModel(image: "", content: "", date: "", stampId: 0))
             .sink { event in
                 print("completion: \(event)")
             } receiveValue: { model in
@@ -63,13 +64,15 @@ extension DefaultListDetailUseCase: ListDetailUseCase {
     public func putStamp(missionId: Int, stampData: ListDetailRequestModel) {
         let data = [stampData.imgURL as Any, stampData.content] as [Any]
         repository.putStamp(missionId: missionId, stampData: data)
+            .replaceError(with: -1)
             .sink { result in
-                self.editSuccess.send(true)
+                self.editSuccess.send(result == -1 ? false: true)
             }.store(in: self.cancelBag)
     }
     
     public func deleteStamp(stampId: Int) {
         repository.deleteStamp(stampId: stampId)
+            .replaceError(with: false)
             .sink { success in
                 self.deleteSuccess.send(success)
             }.store(in: self.cancelBag)
